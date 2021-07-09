@@ -35,7 +35,8 @@ public class MainActivity extends Activity {
 
 
     public void updateTable(){
-        ArrayList<BluetoothDevice> devices = btMan.getConnectedDevices();
+        ArrayList<BluetoothDevice> devices = btMan.getPairedDevices();
+        tblBluetoothData.removeAllViews();
         for (BluetoothDevice device:devices){
             TableRow row = new TableRow(this);
             TextView txtName = new TextView(this);
@@ -46,7 +47,7 @@ public class MainActivity extends Activity {
             row.addView(textRSSI);
             tblBluetoothData.addView(row);
         }
-        if (devices.size()!=0) txtBluetoothInfo.setText("Connected Devices");
+        if (devices.size()!=0) txtBluetoothInfo.setText("Paired Devices (" + devices.size()+")");
         else txtBluetoothInfo.setText("No Connected Devices\nPlease connect 2+ devices");
     }
 }
