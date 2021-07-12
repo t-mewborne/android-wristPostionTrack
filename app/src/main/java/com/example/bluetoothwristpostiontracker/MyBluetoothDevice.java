@@ -1,15 +1,13 @@
 package com.example.bluetoothwristpostiontracker;
 
 import android.bluetooth.BluetoothDevice;
-import android.os.ParcelUuid;
-import android.util.Log;
 
 import java.util.Date;
 import java.util.Objects;
 
 
 //This class represents one single device. Each time the RSSI is updated, the file should be updated as well
-public class BTDeviceData {
+public class MyBluetoothDevice {
 
     //TODO signal data about the device
 
@@ -27,14 +25,15 @@ public class BTDeviceData {
 
     private String debugTag = "BTDeviceData";
 
-    private String macAddress, name;
+    private String macAddress, name, displayName;
     private int rssi, updateCount;
     private Date lastUpdateTime;
 
 
-    public BTDeviceData(BluetoothDevice device, int rssi, Date currentTime) {
-        setName(device.getName());
-        this.macAddress = device.getAddress();
+    public MyBluetoothDevice(BluetoothDevice device, int rssi, Date currentTime) {
+        name = device.getName();
+        setDisplayName(name);
+        macAddress = device.getAddress();
         this.rssi = rssi;
         updateCount = 1;
         lastUpdateTime = currentTime;
@@ -52,18 +51,19 @@ public class BTDeviceData {
     }
 
     public String getName() {return name;}
+    public String getDisplayName(){return displayName;}
     public int getRSSI() {return rssi;}
+    public Date getLastUpdateTime() {return lastUpdateTime;}
 
-    private void setName(String name) {
+    private void setDisplayName(String name) {
         int desiredLength = 20;
-        if (name.length() == desiredLength) this.name = name;
-        else if (name.length() > desiredLength) this.name = name.substring(0,desiredLength-3) + "...";
+        if (name.length() == desiredLength) this.displayName = name;
+        else if (name.length() > desiredLength) this.displayName = name.substring(0,desiredLength-3) + "...";
         else {
-            String newName=name;
-            while (newName.length() < desiredLength) newName = newName + " ";
-            this.name = newName;
+            displayName=name;
+            while (displayName.length() < desiredLength) displayName = displayName + " ";
         }
-        this.name+="\t";
+        displayName+="\t";
     }
 
     public boolean equals(String macAddress) {
@@ -78,7 +78,7 @@ public class BTDeviceData {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        BTDeviceData that = (BTDeviceData) o;
+        MyBluetoothDevice that = (MyBluetoothDevice) o;
         return macAddress.equals(that.macAddress);
     }
 

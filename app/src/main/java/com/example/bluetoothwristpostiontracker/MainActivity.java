@@ -43,14 +43,14 @@ public class MainActivity extends Activity {
 
     public void updateTable(){
         //Log.d(debugTag,"updateTable -- function called");
-        ArrayList<BTDeviceData> devices = btMan.getNearbyDevices();
+        ArrayList<MyBluetoothDevice> devices = btMan.getNearbyDevices();
         tblBluetoothData.removeAllViews();
         if (devices!=null && devices.size()>0) {
-            for (BTDeviceData data : devices) {
+            for (MyBluetoothDevice data : devices) {
                 TableRow row = new TableRow(this);
                 TextView txtName = new TextView(this);
                 TextView textRSSI = new TextView(this);
-                txtName.setText(data.getName());
+                txtName.setText(data.getDisplayName());
                 textRSSI.setText(""+data.getRSSI());
                 //Log.d(debugTag,"updateTable -- rssi " + data.getRSSI());
                 row.addView(txtName);

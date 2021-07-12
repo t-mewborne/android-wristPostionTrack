@@ -12,14 +12,14 @@ import android.util.Log;
 
 import java.util.ArrayList;
 
-//Used for devices that are already paired to the device
+//This class manages the bluetooth adapter
 public class MyBluetoothManager extends MainActivity {
     private BluetoothAdapter bluetoothAdapter;
     private Context context;
     private boolean readyToSearch, discoveryMode, discoveryUnavailable, permissionGranted;
     private String debugTag = "MyBluetoothManager";
     private MainActivity main;
-    private BTDeviceDataManager devices;
+    private MyBluetoothDeviceManager devices;
     private int discoveryModeCount; //The number of times the devices has been concurrently in discovery mode
     private int permissionRequestConstant=43;
 
@@ -29,8 +29,7 @@ public class MyBluetoothManager extends MainActivity {
         this.context=context;
         this.main = main;
         this.permissionRequestConstant=permissionRequestConstant;
-        devices = new BTDeviceDataManager(main);
-        Log.d(debugTag,"MyBluetoothManager -- Object Created");
+        devices = new MyBluetoothDeviceManager(main,context);
         discoveryMode=false;
         discoveryUnavailable=false;
         permissionGranted = false;
@@ -87,13 +86,13 @@ public class MyBluetoothManager extends MainActivity {
         discoveryModeCount++;
         discoveryMode = bluetoothAdapter.startDiscovery();
         main.updateTable();
-        Log.d(debugTag,"begin search -- Iteration [" + discoveryModeCount +"] "+(discoveryMode ? "successfully enabled" : "failed to enable") + " discovery mode");
+        Log.d(debugTag,"Iteration [" + discoveryModeCount +"] begin search -- "+(discoveryMode ? "successfully enabled" : "failed to enable") + " discovery mode");
         discoveryUnavailable=!discoveryMode;
     }
 
     //TODO remove devices that have not been nearby for more than 2 minutes
     private void onSuspendSearch() {
-        Log.d(debugTag,"onSuspendSearch -- Iteration [" + discoveryModeCount + "] of discovery stopped. Attempting to restart...");
+        Log.d(debugTag,"Iteration [" + discoveryModeCount + "] onSuspendSearch -- Discovery stopped. Attempting to restart...");
         discoveryMode=false;
         if(!discoveryUnavailable && readyToSearch) beginSearch(); //Restart discovery mode
         else Log.e(debugTag,"Unable to restart search because: " +
@@ -145,7 +144,7 @@ public class MyBluetoothManager extends MainActivity {
         }
     };
 
-    public ArrayList<BTDeviceData> getNearbyDevices() {
+    public ArrayList<MyBluetoothDevice> getNearbyDevices() {
         return devices.getDeviceList();
     }
 
