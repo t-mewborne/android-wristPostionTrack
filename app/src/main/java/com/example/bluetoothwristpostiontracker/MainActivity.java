@@ -3,10 +3,15 @@ package com.example.bluetoothwristpostiontracker;
 import android.app.Activity;
 import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.util.Log;
+import android.widget.ProgressBar;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
+
+import androidx.annotation.NonNull;
 
 import com.example.bluetoothwristpostiontracker.databinding.ActivityMainBinding;
 
@@ -18,6 +23,8 @@ public class MainActivity extends Activity {
     private TableLayout tblBluetoothData;
     private ActivityMainBinding binding;
     private MyBluetoothManager btMan;
+    private String debugTag = "MainActivity";
+    private int permissionRequestConstant = 43;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,25 +36,49 @@ public class MainActivity extends Activity {
         txtBluetoothInfo = binding.txtBluetoothInfo;
         tblBluetoothData = binding.tblBluetoothData;
 
-        btMan = new MyBluetoothManager(this,this);
+        btMan = new MyBluetoothManager(this,this,permissionRequestConstant);
         updateTable();
     }
 
 
     public void updateTable(){
-        ArrayList<BluetoothDevice> devices = btMan.getPairedDevices();
+        //Log.d(debugTag,"updateTable -- function called");
+        ArrayList<BTDeviceData> devices = btMan.getNearbyDevices();
         tblBluetoothData.removeAllViews();
-        for (BluetoothDevice device:devices){
-            TableRow row = new TableRow(this);
-            TextView txtName = new TextView(this);
-            TextView textRSSI = new TextView(this);
-            txtName.setText(device.getName());
-            //textRSSI.setText(intent.getShortExtra(BluetoothDevice.EXTRA_RSSI,Short.MIN_VALUE));
-            row.addView(txtName);
-            row.addView(textRSSI);
-            tblBluetoothData.addView(row);
+        if (devices!=null && devices.size()>0) {
+            for (BTDeviceData data : devices) {
+                TableRow row = new TableRow(this);
+                TextView txtName = new TextView(this);
+                TextView textRSSI = new TextView(this);
+                txtName.setText(data.getName());
+                textRSSI.setText(""+data.getRSSI());
+                //Log.d(debugTag,"updateTable -- rssi " + data.getRSSI());
+                row.addView(txtName);
+                row.addView(textRSSI);
+                tblBluetoothData.addView(row);
+            }
+            txtBluetoothInfo.setText("Nearby Devices:");
+        } else if (!btMan.isSearching()) {
+            txtBluetoothInfo.setText("Something went wrong");
+        } else {
+            txtBluetoothInfo.setText("Searching...");
         }
-        if (devices.size()!=0) txtBluetoothInfo.setText("Paired Devices (" + devices.size()+")");
-        else txtBluetoothInfo.setText("No Connected Devices\nPlease connect 2+ devices");
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == permissionRequestConstant) {
+            boolean result0 = grantResults[0] == PackageManager.PERMISSION_GRANTED; //ACCESS_FINE_LOCATION
+            boolean result1 = grantResults[1] == PackageManager.PERMISSION_GRANTED; //BLUETOOTH
+
+            Log.d(debugTag,"onRequestPermissionsResult -- Fine location permission " + (result0 ? "granted!" : "denied."));
+            Log.d(debugTag,"onRequestPermissionsResult -- Bluetooth  permission " + (result1 ? "granted!" : "denied."));
+
+            boolean permissionResult = result0 && result1;
+            Log.d(debugTag,"onRequestPermissionsResult -- Permission " + (permissionResult ? "granted!" : "denied."));
+            if (btMan != null) btMan.permissionsReady(permissionResult);
+            else Log.e(debugTag,"Bluetooth Manager does not exist");
+        }
     }
 }
