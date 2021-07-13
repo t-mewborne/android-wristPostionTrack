@@ -6,25 +6,32 @@ import android.bluetooth.BluetoothDevice;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
 import com.example.bluetoothwristpostiontracker.databinding.ActivityMainBinding;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class MainActivity extends Activity {
 
     private TextView txtBluetoothInfo;
     private TableLayout tblBluetoothData;
+    private Button btnStartStop;
     private ActivityMainBinding binding;
     private MyBluetoothManager btMan;
     private String debugTag = "MainActivity";
     private int permissionRequestConstant = 43;
+    private boolean  running = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,11 +42,45 @@ public class MainActivity extends Activity {
 
         txtBluetoothInfo = binding.txtBluetoothInfo;
         tblBluetoothData = binding.tblBluetoothData;
+        btnStartStop = binding.btnStartStop;
+
+        btnStartStop.setText("Start");
+
+
+        btnStartStop.setOnClickListener(v->btnStartStopClick());
 
         btMan = new MyBluetoothManager(this,this,permissionRequestConstant);
         updateTable();
+        txtBluetoothInfo.setText("Press Start to Begin");
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON); //TODO Remove later, keeps screen on for testing
+
+        String existingfiles = "";
+        for(String file:fileList()) existingfiles+=("\n"+file);
+        Log.i(debugTag," Existing files:"+ existingfiles);
     }
 
+    private void btnStartStopClick() {
+        Log.d(debugTag,"btnStartStopClick -- button clicked");
+        if (running) {
+            btnStartStop.setText("start");
+            btMan.userStoppedSearch();
+            running=!running;
+            updateTable();
+
+        } else if (!running && btMan.isReady()){
+            btnStartStop.setText("stop");
+            btMan.userStartedSearch();
+            running=!running;
+            updateTable();
+        } else if (!running && !btMan.isReady()) {
+            txtBluetoothInfo.setText("Wait...");
+        }
+
+    }
+
+    public void searchStopped() {
+        txtBluetoothInfo.setText("Search Stopped.");
+    }
 
     public void updateTable(){
         //Log.d(debugTag,"updateTable -- function called");
@@ -58,10 +99,10 @@ public class MainActivity extends Activity {
                 tblBluetoothData.addView(row);
             }
             txtBluetoothInfo.setText("Nearby Devices:");
-        } else if (!btMan.isSearching()) {
-            txtBluetoothInfo.setText("Something went wrong");
-        } else {
+        } else if (running) {
             txtBluetoothInfo.setText("Searching...");
+        } else {
+            txtBluetoothInfo.setText("");
         }
     }
 

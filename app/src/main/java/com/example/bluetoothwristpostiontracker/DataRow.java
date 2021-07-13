@@ -16,4 +16,5 @@ public class DataRow {
     public String getName() {return name;}
     public String getTimeStamp() {return timeStamp;}
     public int getSignalStrength() {return signalStrength;}
+    public String getRow() {return (timeStamp+"\t"+name+"\t"+signalStrength);}
 }

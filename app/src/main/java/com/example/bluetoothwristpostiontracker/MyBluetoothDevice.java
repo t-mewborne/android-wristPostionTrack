@@ -23,7 +23,7 @@ public class MyBluetoothDevice {
     //TODO change from float, indicates the last time the device was updated
     private float recentTimeStamp;
 
-    private String debugTag = "BTDeviceData";
+    private String debugTag = "MyBluetoothDevice";
 
     private String macAddress, name, displayName;
     private int rssi, updateCount;

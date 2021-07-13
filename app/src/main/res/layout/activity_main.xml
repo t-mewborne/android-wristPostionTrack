@@ -12,16 +12,18 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:padding="@dimen/inner_frame_layout_padding"
+        android:translationY="-10dp"
         app:layout_boxedEdges="all">
 
-        <TextView
-            android:id="@+id/txtTitle"
+        <Button
+            android:id="@+id/btnStartStop"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
-            android:text="@string/titleText"
-            android:textSize="20sp"
-            android:translationY="-5dp" />
+            android:backgroundTint="#3F51B5"
+            android:gravity="center"
+            android:translationY="-5dp"
+            tools:text="Start" />
 
         <TextView
             android:id="@+id/txtBluetoothInfo"
@@ -29,13 +31,13 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:text="@string/dataText"
-            android:translationY="25dp" />
+            android:translationY="40dp" />
 
         <TableLayout
             android:id="@+id/tblBluetoothData"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:translationY="45dp" />
+            android:translationY="60dp" />
 
     </FrameLayout>
 </androidx.wear.widget.BoxInsetLayout>

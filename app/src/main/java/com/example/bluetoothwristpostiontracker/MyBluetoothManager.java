@@ -16,7 +16,7 @@ import java.util.ArrayList;
 public class MyBluetoothManager extends MainActivity {
     private BluetoothAdapter bluetoothAdapter;
     private Context context;
-    private boolean readyToSearch, discoveryMode, discoveryUnavailable, permissionGranted;
+    private boolean userReady, readyToSearch, discoveryMode, discoveryUnavailable, permissionGranted;
     private String debugTag = "MyBluetoothManager";
     private MainActivity main;
     private MyBluetoothDeviceManager devices;
@@ -33,6 +33,7 @@ public class MyBluetoothManager extends MainActivity {
         discoveryMode=false;
         discoveryUnavailable=false;
         permissionGranted = false;
+        userReady = false;
         discoveryModeCount=0;
 
         //Request Permissions
@@ -45,9 +46,12 @@ public class MyBluetoothManager extends MainActivity {
     public void permissionsReady(boolean permissionResult) {
         permissionGranted=permissionResult;
         readyToSearch = bluetoothTestAndEnable();
+    }
 
+    public void userStartedSearch() {
         //Begin first search iteration, if available
-        if (!readyToSearch || !permissionGranted) {
+        userReady = true;
+        if (!isReady()) {
             Log.e(debugTag,"permissionsReady -- Failed to enable bluetooth. Cannot begin discovery\n" + booleanVals());
         } else {
             IntentFilter filter = new IntentFilter();
@@ -59,6 +63,12 @@ public class MyBluetoothManager extends MainActivity {
             context.registerReceiver(mReceiver, filter);
             beginSearch();
         }
+    }
+
+    public void userStoppedSearch() {
+        userReady=false;
+        bluetoothAdapter.cancelDiscovery();
+        main.updateTable();
     }
 
     private boolean bluetoothTestAndEnable() {
@@ -94,10 +104,15 @@ public class MyBluetoothManager extends MainActivity {
     private void onSuspendSearch() {
         Log.d(debugTag,"Iteration [" + discoveryModeCount + "] onSuspendSearch -- Discovery stopped. Attempting to restart...");
         discoveryMode=false;
-        if(!discoveryUnavailable && readyToSearch) beginSearch(); //Restart discovery mode
-        else Log.e(debugTag,"Unable to restart search because: " +
-                (discoveryUnavailable ? "\ndiscovery is unavailable (previously failed to enable)" : "") +
-                (!readyToSearch ? "\ndevice not ready to search, " : ""));
+        if(!discoveryUnavailable && readyToSearch && userReady) beginSearch(); //Restart discovery mode
+        else {
+            Log.e(debugTag,"onSuspendSearch -- Unable to restart search because of the following: " +
+                    (discoveryUnavailable ? "\ndiscovery is unavailable (previously failed to enable)" : "") +
+                    (!readyToSearch ? "\ndevice not ready to search" : "") +
+                    (!userReady ? "\nuser cancelled restart":""));
+            main.searchStopped();
+            devices.updateFile();
+        }
     }
 
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
@@ -158,6 +173,10 @@ public class MyBluetoothManager extends MainActivity {
 
     public boolean isSearching() {
         return readyToSearch && !discoveryUnavailable && permissionGranted;
+    }
+
+    public boolean isReady() {
+        return readyToSearch && permissionGranted;
     }
 
     protected void onDestroy(){

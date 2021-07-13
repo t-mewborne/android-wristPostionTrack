@@ -5,6 +5,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -13,20 +17,23 @@ import java.util.Date;
 public class MyBluetoothDeviceManager {
     private ArrayList<MyBluetoothDevice> deviceList;
     ArrayList<DataRow> table;
-    private String debugTag = "BTDeviceDataManager";
+    private String debugTag = "MyBluetoothDeviceManager";
     private MainActivity main;
     private Context context;
     private Date creationTime;
     private String filename;
+    private File file;
 
     public MyBluetoothDeviceManager(MainActivity main, Context context) {
         this.main = main;
         this.context=context;
         deviceList = new ArrayList<MyBluetoothDevice>();
         creationTime = Calendar.getInstance().getTime();
-        filename = "WT_" + creationTime.toString().replaceAll(" ","_") + ".csv";
-        Log.d(debugTag,"BTDeviceDataManager -- file will be named \"" + filename+"\"");
-
+        String dateToName = creationTime.toString().replaceAll(" ","_").replaceAll(":",".");
+        dateToName = dateToName.substring(0,11) + "At_" + dateToName.substring(11);
+        filename = "TrackingData_" + dateToName + ".csv";
+        Log.d(debugTag,"MyBluetoothDeviceManager -- new file will be named \"" + filename+"\"");
+        file = main.getDir(filename,main.MODE_APPEND);
         table = new ArrayList<DataRow>();
     }
 
@@ -63,27 +70,32 @@ public class MyBluetoothDeviceManager {
         return null;
     }
 
-
-
-    //TODO
     public void updateData(MyBluetoothDevice device) {
         table.add(new DataRow(device.getLastUpdateTime(),device.getName(),device.getRSSI()));
     }
 
     //TODO, wrtie all the data to a file
     //private static final int CREATE_FILE = 1;
-    private void createFile(/*Uri pickerInitialUri*/) {
-
-        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
-        intent.addCategory(Intent.CATEGORY_OPENABLE);
-        intent.setType("application/csv");
-        intent.putExtra(Intent.EXTRA_TITLE, filename);
-
-        // Optionally, specify a URI for the directory that should be opened in
-        // the system file picker when your app creates the document.
-        //intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, pickerInitialUri);
-
-        context.startActivity(intent);
+    public void updateFile() {
+        Log.d(debugTag,"updateFile -- attempting to write data to file \""+filename+"\"...");
+        try {
+            FileOutputStream out = main.openFileOutput(filename,main.MODE_APPEND);
+            out.close();
+            Log.d(debugTag,"updateFile -- file updated");
+            /*
+            FileWriter writer = new FileWriter(file);
+            for (DataRow data:table) {
+                writer.append(data.getRow() + "\n");
+            }
+            table.clear();
+            writer.close();
+            Log.d(debugTag,"updateFile -- file updated");*/
+        } catch (IOException e) {
+            Log.e(debugTag,"updateFile -- An IO exception occurred:\n"+e);
+            //e.printStackTrace();
+        } catch (Exception e) {
+            Log.e(debugTag,"updateFile -- An error occurred:\n"+e);
+        }
     }
 
     public ArrayList<MyBluetoothDevice> getDeviceList() {
