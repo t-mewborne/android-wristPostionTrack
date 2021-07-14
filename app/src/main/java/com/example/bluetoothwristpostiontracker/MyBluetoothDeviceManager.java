@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -22,6 +23,7 @@ public class MyBluetoothDeviceManager {
     private Context context;
     private Date creationTime;
     private String filename;
+    private boolean writingFile;
     private File file;
 
     public MyBluetoothDeviceManager(MainActivity main, Context context) {
@@ -30,11 +32,14 @@ public class MyBluetoothDeviceManager {
         deviceList = new ArrayList<MyBluetoothDevice>();
         creationTime = Calendar.getInstance().getTime();
         String dateToName = creationTime.toString().replaceAll(" ","_").replaceAll(":",".");
-        dateToName = dateToName.substring(0,11) + "At_" + dateToName.substring(11);
+        dateToName = dateToName.substring(4,11) + "At_" + dateToName.substring(11,23);
         filename = "TrackingData_" + dateToName + ".csv";
         Log.d(debugTag,"MyBluetoothDeviceManager -- new file will be named \"" + filename+"\"");
-        file = main.getDir(filename,main.MODE_APPEND);
+        File path = context.getFilesDir();
+        file = new File(path,filename); //context.getDir(filename,main.MODE_APPEND);
+        writingFile = false;
         table = new ArrayList<DataRow>();
+        table.add(new DataRow("time","device_name","signal_strength"));
     }
 
     public void addOrUpdate(BluetoothDevice device, int rssi) {
@@ -70,31 +75,53 @@ public class MyBluetoothDeviceManager {
         return null;
     }
 
+    public void forgetAll() {
+        table.clear();
+    }
+
     public void updateData(MyBluetoothDevice device) {
         table.add(new DataRow(device.getLastUpdateTime(),device.getName(),device.getRSSI()));
     }
 
-    //TODO, wrtie all the data to a file
-    //private static final int CREATE_FILE = 1;
+    /*To access the created file:
+     * Android Studio > View > Tool Windows > Device File Explorer
+     * Files are saved at: data/data/com.example.bluetoothwristpositiontracker/files
+     * Right click on the app folder and click "synchronize" to update
+     * Right click and select "save as" to download to computer
+     */
     public void updateFile() {
+        if (writingFile || table.isEmpty()){
+            Log.i(debugTag, "updateFile -- cannot write file for the following reasons: " +
+                    (writingFile ? "\nalready writing to a file" : "") +
+                    (table.isEmpty() ? "\nthere is no data available to write to the file" : ""));
+            return;
+        }
+
         Log.d(debugTag,"updateFile -- attempting to write data to file \""+filename+"\"...");
+        writingFile=true;
         try {
-            FileOutputStream out = main.openFileOutput(filename,main.MODE_APPEND);
-            out.close();
-            Log.d(debugTag,"updateFile -- file updated");
+            int dataCount = table.size();
+
             /*
-            FileWriter writer = new FileWriter(file);
-            for (DataRow data:table) {
-                writer.append(data.getRow() + "\n");
-            }
-            table.clear();
+            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(context.openFileOutput(filename, context.MODE_PRIVATE));
+            for (DataRow data:table) outputStreamWriter.append(data.getRow()+'\n');
+            outputStreamWriter.close();
+            */
+
+            FileWriter writer = new FileWriter(file,true);
+            for (DataRow data:table) writer.append(data.getRow() + '\n');
             writer.close();
-            Log.d(debugTag,"updateFile -- file updated");*/
+
+
+            table.clear();
+
+            Log.d(debugTag,"updateFile -- file updated with " + dataCount + " data point(s).");
         } catch (IOException e) {
             Log.e(debugTag,"updateFile -- An IO exception occurred:\n"+e);
-            //e.printStackTrace();
         } catch (Exception e) {
-            Log.e(debugTag,"updateFile -- An error occurred:\n"+e);
+            Log.e(debugTag,"updateFile -- An exception occurred:\n"+e);
+        } finally {
+            writingFile=false;
         }
     }
 

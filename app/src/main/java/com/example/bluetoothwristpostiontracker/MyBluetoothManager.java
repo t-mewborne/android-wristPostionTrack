@@ -130,6 +130,7 @@ public class MyBluetoothManager extends MainActivity {
                 case BluetoothDevice.ACTION_FOUND:
                     //Device found
                     if (deviceFound) {
+                        Log.d(debugTag,"DEVICE FOUND");
                         devices.addOrUpdate(device,rssi);
                     }
                     break;
@@ -173,6 +174,10 @@ public class MyBluetoothManager extends MainActivity {
 
     public boolean isSearching() {
         return readyToSearch && !discoveryUnavailable && permissionGranted;
+    }
+
+    public void forgetDevices() {
+        devices.forgetAll();
     }
 
     public boolean isReady() {

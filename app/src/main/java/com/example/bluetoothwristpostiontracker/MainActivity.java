@@ -67,12 +67,12 @@ public class MainActivity extends Activity {
             running=!running;
             updateTable();
 
-        } else if (!running && btMan.isReady()){
+        } else if (btMan.isReady()){
             btnStartStop.setText("stop");
             btMan.userStartedSearch();
             running=!running;
             updateTable();
-        } else if (!running && !btMan.isReady()) {
+        } else if (!btMan.isReady()) {
             txtBluetoothInfo.setText("Wait...");
         }
 
@@ -80,6 +80,8 @@ public class MainActivity extends Activity {
 
     public void searchStopped() {
         txtBluetoothInfo.setText("Search Stopped.");
+        tblBluetoothData.removeAllViews();
+        btMan.forgetDevices();
     }
 
     public void updateTable(){
