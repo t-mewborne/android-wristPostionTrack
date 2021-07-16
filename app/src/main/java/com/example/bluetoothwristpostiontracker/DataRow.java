@@ -5,22 +5,26 @@ import android.util.Log;
 import java.util.Date;
 
 public class DataRow {
-    private String timeStamp, name, signalStrength;
+    private String time, name, signalStrength;
+    //private long time;
+    //Time represented in seconds
 
-    public DataRow(Date timestamp, String name, int signalStrength) {
-        this.timeStamp=timestamp.toString().substring(4,19).replaceAll(" ","_");
+    public DataRow(long time, String name, int signalStrength) {
+        //this.timeStamp=timestamp.toString().substring(4,19).replaceAll(" ","_");
+        this.time = ""+time;
         this.name = name.replaceAll(" ","_");
         this.signalStrength=""+signalStrength;
     }
 
-    public DataRow(String timestamp, String name, String signalStrength) {
-        this.timeStamp=timestamp.toString().substring(4,19).replaceAll(" ","_");
+    public DataRow(String time, String name, String signalStrength) {
+        //this.timeStamp=timestamp.replaceAll(" ","_");
+        this.time = time;
         this.name = name.replaceAll(" ","_");
         this.signalStrength=signalStrength;
     }
 
     public String getName() {return name;}
-    public String getTimeStamp() {return timeStamp;}
+    public String getTimeStamp() {return ""+time;}
     public String getSignalStrength() {return signalStrength;}
-    public String getRow() {return (timeStamp+"\t"+name+"\t"+signalStrength);}
+    public String getRow() {return (time+"\t"+name+"\t"+signalStrength);}
 }

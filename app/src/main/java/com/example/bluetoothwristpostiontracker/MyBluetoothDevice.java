@@ -27,22 +27,22 @@ public class MyBluetoothDevice {
 
     private String macAddress, name, displayName;
     private int rssi, updateCount;
-    private Date lastUpdateTime;
+    private long lastUpdateTime;
 
 
-    public MyBluetoothDevice(BluetoothDevice device, int rssi, Date currentTime) {
+    public MyBluetoothDevice(BluetoothDevice device, int rssi, long timeSinceStart) {
         name = device.getName();
         setDisplayName(name);
         macAddress = device.getAddress();
         this.rssi = rssi;
         updateCount = 1;
-        lastUpdateTime = currentTime;
+        lastUpdateTime = timeSinceStart;
         minimumRecordedSignalStrength = maximumRecordedSignalStrength = rssi;
         signalTrustworthiness = 50;
     }
 
-    public void updateDevice(BluetoothDevice device,int rssi,Date currentTime){
-        lastUpdateTime=currentTime;
+    public void updateDevice(BluetoothDevice device,int rssi,long timeSinceStart){
+        lastUpdateTime=timeSinceStart;
         this.rssi=rssi;
         updateCount++;
         minimumRecordedSignalStrength = rssi < minimumRecordedSignalStrength ? rssi : minimumRecordedSignalStrength;
@@ -53,7 +53,7 @@ public class MyBluetoothDevice {
     public String getName() {return name;}
     public String getDisplayName(){return displayName;}
     public int getRSSI() {return rssi;}
-    public Date getLastUpdateTime() {return lastUpdateTime;}
+    public long getLastUpdateTime() {return lastUpdateTime;}
 
     private void setDisplayName(String name) {
         int desiredLength = 20;

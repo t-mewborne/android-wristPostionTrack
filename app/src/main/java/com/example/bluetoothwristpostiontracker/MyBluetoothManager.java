@@ -102,7 +102,7 @@ public class MyBluetoothManager extends MainActivity {
 
     //TODO remove devices that have not been nearby for more than 2 minutes
     private void onSuspendSearch() {
-        Log.d(debugTag,"Iteration [" + discoveryModeCount + "] onSuspendSearch -- Discovery stopped. Attempting to restart...");
+        Log.d(debugTag,"Iteration [" + discoveryModeCount + "] onSuspendSearch -- Discovery stopped. " + devices.getTotalDataPoints() + " data points located thus far. Attempting to restart search...");
         discoveryMode=false;
         if(!discoveryUnavailable && readyToSearch && userReady) beginSearch(); //Restart discovery mode
         else {
@@ -112,6 +112,7 @@ public class MyBluetoothManager extends MainActivity {
                     (!userReady ? "\nuser cancelled restart":""));
             main.searchStopped();
             devices.updateFile();
+            forgetDevices();
         }
     }
 
@@ -130,7 +131,6 @@ public class MyBluetoothManager extends MainActivity {
                 case BluetoothDevice.ACTION_FOUND:
                     //Device found
                     if (deviceFound) {
-                        Log.d(debugTag,"DEVICE FOUND");
                         devices.addOrUpdate(device,rssi);
                     }
                     break;
@@ -176,7 +176,7 @@ public class MyBluetoothManager extends MainActivity {
         return readyToSearch && !discoveryUnavailable && permissionGranted;
     }
 
-    public void forgetDevices() {
+    private void forgetDevices() {
         devices.forgetAll();
     }
 

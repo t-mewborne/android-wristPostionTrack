@@ -54,9 +54,9 @@ public class MainActivity extends Activity {
         txtBluetoothInfo.setText("Press Start to Begin");
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON); //TODO Remove later, keeps screen on for testing
 
-        String existingfiles = "";
-        for(String file:fileList()) existingfiles+=("\n"+file);
-        Log.i(debugTag," Existing files:"+ existingfiles);
+        String existingFiles = "";
+        for(String file:fileList()) existingFiles+=("\n"+file);
+        Log.i(debugTag," Existing files:"+ (existingFiles.isEmpty() ? "<none>" : existingFiles));
     }
 
     private void btnStartStopClick() {
@@ -81,7 +81,7 @@ public class MainActivity extends Activity {
     public void searchStopped() {
         txtBluetoothInfo.setText("Search Stopped.");
         tblBluetoothData.removeAllViews();
-        btMan.forgetDevices();
+        //btMan.forgetDevices();
     }
 
     public void updateTable(){
