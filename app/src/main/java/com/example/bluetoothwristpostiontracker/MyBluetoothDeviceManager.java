@@ -2,22 +2,18 @@ package com.example.bluetoothwristpostiontracker;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
-import android.content.Intent;
 import android.util.Log;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 
 //This class is in charge of updating the file and managing the list of bluetooth devices
 public class MyBluetoothDeviceManager {
     private ArrayList<MyBluetoothDevice> deviceList;
-    ArrayList<DataRow> table;
+    ArrayList<DataRowBluetooth> table; //TODO change to queue<DataRow>
     private String debugTag = "MyBluetoothDeviceManager";
     private MainActivity main;
     private Context context;
@@ -32,48 +28,44 @@ public class MyBluetoothDeviceManager {
         this.main = main;
         this.context=context;
         deviceList = new ArrayList<MyBluetoothDevice>();
-        creationTime = Calendar.getInstance().getTime();
-        creationTimeMillis=Calendar.getInstance().getTimeInMillis();
-        String dateToName = creationTime.toString().replaceAll(" ","_").replaceAll(":",".");
-        dateToName = dateToName.substring(4,11) + "At_" + dateToName.substring(11,23);
-        filename = "TrackingData_" + dateToName + ".csv";
+        creationTime = main.getCreationTime();
+        creationTimeMillis=main.getCreationTimeMillis();
+        filename = main.getDateForFilename() + "_bluetooth.csv";
         Log.d(debugTag,"MyBluetoothDeviceManager -- new file will be named \"" + filename+"\"");
         File path = context.getFilesDir();
         file = new File(path,filename); //context.getDir(filename,main.MODE_APPEND);
         writingFile = false;
-        table = new ArrayList<DataRow>();
-        table.add(new DataRow("time(sec)","device_name","signal_strength"));
+        table = new ArrayList<DataRowBluetooth>();
+        table.add(new DataRowBluetooth("time(ms)","device_name","signal_strength"));
     }
 
     public void addOrUpdate(BluetoothDevice device, int rssi) {
         MyBluetoothDevice data = find(device);
         String deviceName = device.getName();
-        if (deviceName==null) return;
-        //Log.d(debugTag,"device \"" + deviceName + "\" null? " + (deviceName==null));
+        if (deviceName==null) return; //no real device was passed
         if (data==null && deviceName != null){ //If data is null, device does not exist yet
             Log.d(debugTag,"addIfDoesNotExist -- new device found: \"" + deviceName + "\"\tAddress ["+device.getAddress()+"]  RSSI: " + rssi);
             data=add(device, rssi);
             updateData(data);
             totalDataPoints++;
-        } else if (data!=null) {
-            //Log.d(debugTag,"addIfDoesNotExist -- device updated: \"" + deviceName + "\"\tAddress ["+device.getAddress()+"]\tRSSI: " + rssi);
-            data.updateDevice(device, rssi,secondsSinceStart());
+        } else if (data!=null) { //Device already exists, update it
+            data.updateDevice(device, rssi,main.millisecondsSinceStart());
             updateData(data);
             totalDataPoints++;
         }
-        main.updateTable();
+        main.updateTable(); //Refresh the main table
         if (!writingFile && table.size()>=100) {
+            //TODO something is up with this. Data not getting added. Need to queue up data to be added to table
+            //TODO what if i use a queue instead of an arraylist to begin with? then i dont need to worry about accidentally deleting data
             Log.d(debugTag,"Exceeded data limit, transferring data to file.");
             updateFile();
         }
     }
 
-    private long secondsSinceStart() {
-        return (Calendar.getInstance().getTimeInMillis()-creationTimeMillis)/1000;
-    }
+
 
     public MyBluetoothDevice add(BluetoothDevice device, int rssi) {
-        MyBluetoothDevice newDevice = new MyBluetoothDevice(device, rssi, secondsSinceStart());
+        MyBluetoothDevice newDevice = new MyBluetoothDevice(device, rssi, main.millisecondsSinceStart());
         deviceList.add(newDevice);
         return newDevice;
     }
@@ -93,7 +85,7 @@ public class MyBluetoothDeviceManager {
     }
 
     public void updateData(MyBluetoothDevice device) {
-        table.add(new DataRow(device.getLastUpdateTime(),device.getName(),device.getRSSI()));
+        table.add(new DataRowBluetooth(device.getLastUpdateTime(),device.getName(),device.getRSSI()));
         //Log.d(debugTag,"added new data. size: " + table.size());
     }
 
@@ -108,7 +100,7 @@ public class MyBluetoothDeviceManager {
         if (writingFile || table.isEmpty()){
             Log.i(debugTag, "updateFile -- cannot write file for the following reasons: " +
                     (writingFile ? "\nalready writing to a file" : "") +
-                    (table.isEmpty() ? "\nthere is no data available to write to the file. Size: "+table.size() : ""));
+                    (table.isEmpty() ? "\nthere is no data available to write to the file." : ""));
             return;
         }
 
@@ -125,7 +117,7 @@ public class MyBluetoothDeviceManager {
             */
 
             FileWriter writer = new FileWriter(file,true);
-            for (DataRow data:table) writer.append(data.getRow() + '\n');
+            for (DataRowBluetooth data:table) writer.append(data.getRow() + '\n');
             writer.close();
 
 

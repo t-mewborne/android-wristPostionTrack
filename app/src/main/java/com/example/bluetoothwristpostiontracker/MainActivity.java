@@ -21,6 +21,8 @@ import com.example.bluetoothwristpostiontracker.databinding.ActivityMainBinding;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 
 public class MainActivity extends Activity {
 
@@ -29,9 +31,13 @@ public class MainActivity extends Activity {
     private Button btnStartStop;
     private ActivityMainBinding binding;
     private MyBluetoothManager btMan;
+    private AccelerometerHandler accelerometerHandler;
     private String debugTag = "MainActivity";
+    private String dateForFilename;
     private int permissionRequestConstant = 43;
     private boolean  running = false;
+    private Date creationTime;
+    private long creationTimeMillis;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,6 +46,12 @@ public class MainActivity extends Activity {
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        creationTime = Calendar.getInstance().getTime();
+        creationTimeMillis= Calendar.getInstance().getTimeInMillis();
+
+        String dateToName = creationTime.toString().replaceAll(" ","_").replaceAll(":",".");
+        dateForFilename = dateToName.substring(4,11) + "At_" + dateToName.substring(11,23);
+
         txtBluetoothInfo = binding.txtBluetoothInfo;
         tblBluetoothData = binding.tblBluetoothData;
         btnStartStop = binding.btnStartStop;
@@ -47,9 +59,11 @@ public class MainActivity extends Activity {
         btnStartStop.setText("Start");
 
 
+
         btnStartStop.setOnClickListener(v->btnStartStopClick());
 
         btMan = new MyBluetoothManager(this,this,permissionRequestConstant);
+        accelerometerHandler = new AccelerometerHandler(this,this);
         updateTable();
         txtBluetoothInfo.setText("Press Start to Begin");
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON); //TODO Remove later, keeps screen on for testing
@@ -62,26 +76,38 @@ public class MainActivity extends Activity {
     private void btnStartStopClick() {
         Log.d(debugTag,"btnStartStopClick -- button clicked");
         if (running) {
-            btnStartStop.setText("start");
-            btMan.userStoppedSearch();
-            running=!running;
-            updateTable();
-
+            onStopSearch();
         } else if (btMan.isReady()){
-            btnStartStop.setText("stop");
-            btMan.userStartedSearch();
-            running=!running;
-            updateTable();
+            onStartSearch();
         } else if (!btMan.isReady()) {
             txtBluetoothInfo.setText("Wait...");
         }
 
     }
 
-    public void searchStopped() {
+    private void onStartSearch() {
+        if (!running && btMan.isReady()) {
+            btnStartStop.setText("stop");
+            btMan.userStartedSearch();
+            accelerometerHandler.userStartedSearch();
+            running = !running;
+            updateTable();
+        }
+    }
+
+    private void onStopSearch() {
+        if (running) {
+            btnStartStop.setText("start");
+            btMan.userStoppedSearch();
+            accelerometerHandler.userStoppedSearch();
+            running=!running;
+            updateTable();
+        }
+    }
+
+    public void searchStopped() { //Called externally when search is successfully stopped
         txtBluetoothInfo.setText("Search Stopped.");
         tblBluetoothData.removeAllViews();
-        //btMan.forgetDevices();
     }
 
     public void updateTable(){
@@ -108,6 +134,35 @@ public class MainActivity extends Activity {
         }
     }
 
+    public Date getCreationTime() {
+        return creationTime;
+    }
+
+    public long getCreationTimeMillis() {
+        return creationTimeMillis;
+    }
+
+    public long millisecondsSinceStart(){
+        return (Calendar.getInstance().getTimeInMillis()-creationTimeMillis);
+    }
+
+    public long millisecondsSinceStart(long currentTimeMillis) {
+        return (currentTimeMillis-creationTimeMillis);
+    }
+
+    @Deprecated
+    public long secondsSinceStart() {
+        return (Calendar.getInstance().getTimeInMillis()-creationTimeMillis)/1000;
+    }
+
+    public String getDateForFilename(){
+        return dateForFilename;
+    }
+
+    public boolean isRunning() {
+        return running;
+    }
+
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -120,8 +175,19 @@ public class MainActivity extends Activity {
 
             boolean permissionResult = result0 && result1;
             Log.d(debugTag,"onRequestPermissionsResult -- Permission " + (permissionResult ? "granted!" : "denied."));
-            if (btMan != null) btMan.permissionsReady(permissionResult);
+            if (btMan != null) btMan.bluetoothTestAndEnable(permissionResult);
             else Log.e(debugTag,"Bluetooth Manager does not exist");
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        onStopSearch();
     }
 }

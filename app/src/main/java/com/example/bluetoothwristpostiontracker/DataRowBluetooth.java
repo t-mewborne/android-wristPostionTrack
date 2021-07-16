@@ -4,19 +4,19 @@ import android.util.Log;
 
 import java.util.Date;
 
-public class DataRow {
+public class DataRowBluetooth {
     private String time, name, signalStrength;
     //private long time;
     //Time represented in seconds
 
-    public DataRow(long time, String name, int signalStrength) {
+    public DataRowBluetooth(long time, String name, int signalStrength) {
         //this.timeStamp=timestamp.toString().substring(4,19).replaceAll(" ","_");
         this.time = ""+time;
         this.name = name.replaceAll(" ","_");
         this.signalStrength=""+signalStrength;
     }
 
-    public DataRow(String time, String name, String signalStrength) {
+    public DataRowBluetooth(String time, String name, String signalStrength) {
         //this.timeStamp=timestamp.replaceAll(" ","_");
         this.time = time;
         this.name = name.replaceAll(" ","_");

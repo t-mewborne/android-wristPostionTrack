@@ -20,20 +20,17 @@ public class MyBluetoothManager extends MainActivity {
     private String debugTag = "MyBluetoothManager";
     private MainActivity main;
     private MyBluetoothDeviceManager devices;
-    private int discoveryModeCount; //The number of times the devices has been concurrently in discovery mode
-    private int permissionRequestConstant=43;
+    private int discoveryModeCount; //Number of times discovery mode has been started
+    //private int permissionRequestConstant=43;
 
     public MyBluetoothManager(Context context, MainActivity main, int permissionRequestConstant) {
 
         //Define and assign
         this.context=context;
         this.main = main;
-        this.permissionRequestConstant=permissionRequestConstant;
+        //this.permissionRequestConstant=permissionRequestConstant;
         devices = new MyBluetoothDeviceManager(main,context);
-        discoveryMode=false;
-        discoveryUnavailable=false;
-        permissionGranted = false;
-        userReady = false;
+        discoveryMode=discoveryUnavailable=permissionGranted=userReady=false;
         discoveryModeCount=0;
 
         //Request Permissions
@@ -43,11 +40,10 @@ public class MyBluetoothManager extends MainActivity {
         //CALL "permissionsReady" from parent class TO CONTINUE
     }
 
-    public void permissionsReady(boolean permissionResult) {
-        permissionGranted=permissionResult;
-        readyToSearch = bluetoothTestAndEnable();
-    }
 
+
+
+    //User control
     public void userStartedSearch() {
         //Begin first search iteration, if available
         userReady = true;
@@ -71,16 +67,31 @@ public class MyBluetoothManager extends MainActivity {
         main.updateTable();
     }
 
-    private boolean bluetoothTestAndEnable() {
 
+
+
+/*
+    //Bluetooth
+    //Call when permission result has been returned to main class
+    @Deprecated //Call bluetooth test and enable instead
+    public void permissionsReady(boolean permissionResult) {
+        //permissionGranted=permissionResult;
+        //readyToSearch = bluetoothTestAndEnable();
+    }*/
+
+    //Call
+    public boolean bluetoothTestAndEnable(boolean permissionResult) {
+        permissionGranted=permissionResult;
         if(!permissionGranted) {
             Log.e(debugTag,"bluetoothTestAndEnable -- permission NOT granted to enable bluetooth");
+            readyToSearch = false;
             return false;
         }
 
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if (bluetoothAdapter == null) {
             Log.e(debugTag,"bluetoothTestAndEnable -- This device does not have a bluetooth adapter. Cannot continue.");
+            readyToSearch = false;
             return false;
         }
         if (!bluetoothAdapter.isEnabled()) {
@@ -88,8 +99,11 @@ public class MyBluetoothManager extends MainActivity {
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             context.startActivity(enableBtIntent);
         }
-        Log.d(debugTag,"bluetoothTestAndEnable -- Bluetooth is enabled");
-        return bluetoothAdapter.isEnabled();
+        readyToSearch = bluetoothAdapter.isEnabled();;
+        Log.d(debugTag,"bluetoothTestAndEnable -- " + (readyToSearch ?
+                "Bluetooth is enabled. Waiting for user to begin search." :
+                "Failed to enable bluetooth."));
+        return readyToSearch;
     }
 
     private void beginSearch() {
