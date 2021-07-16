@@ -126,7 +126,6 @@ public class MyBluetoothManager extends MainActivity {
                     (!userReady ? "\nuser cancelled restart":""));
             main.searchStopped();
             devices.updateFile();
-            forgetDevices();
         }
     }
 
@@ -188,10 +187,6 @@ public class MyBluetoothManager extends MainActivity {
 
     public boolean isSearching() {
         return readyToSearch && !discoveryUnavailable && permissionGranted;
-    }
-
-    private void forgetDevices() {
-        devices.forgetAll();
     }
 
     public boolean isReady() {

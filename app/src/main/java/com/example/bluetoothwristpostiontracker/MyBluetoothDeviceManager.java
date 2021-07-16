@@ -13,7 +13,8 @@ import java.util.Date;
 //This class is in charge of updating the file and managing the list of bluetooth devices
 public class MyBluetoothDeviceManager {
     private ArrayList<MyBluetoothDevice> deviceList;
-    ArrayList<DataRowBluetooth> table; //TODO change to queue<DataRow>
+    //ArrayList<DataRowBluetooth> table; //TODO change to queue<DataRow>
+    private MyQueue<DataPointBluetooth> bluetoothData;
     private String debugTag = "MyBluetoothDeviceManager";
     private MainActivity main;
     private Context context;
@@ -27,16 +28,23 @@ public class MyBluetoothDeviceManager {
     public MyBluetoothDeviceManager(MainActivity main, Context context) {
         this.main = main;
         this.context=context;
+
         deviceList = new ArrayList<MyBluetoothDevice>();
+        bluetoothData = new MyQueue<DataPointBluetooth>();
+
         creationTime = main.getCreationTime();
         creationTimeMillis=main.getCreationTimeMillis();
-        filename = main.getDateForFilename() + "_bluetooth.csv";
-        Log.d(debugTag,"MyBluetoothDeviceManager -- new file will be named \"" + filename+"\"");
+
         File path = context.getFilesDir();
-        file = new File(path,filename); //context.getDir(filename,main.MODE_APPEND);
+        filename = main.getDateForFilename() + "_bluetooth.csv";
+        file = new File(path,filename);
+        Log.d(debugTag,"MyBluetoothDeviceManager -- new file will be named \"" + filename+"\"");
+
         writingFile = false;
-        table = new ArrayList<DataRowBluetooth>();
-        table.add(new DataRowBluetooth("time(ms)","device_name","signal_strength"));
+
+        //table = new ArrayList<DataPointBluetooth>();
+        //table.add(new DataPointBluetooth("time(ms)","device_name","signal_strength"));
+        bluetoothData.enqueue(new DataPointBluetooth("time(ms)","device_name","signal_strength"));
     }
 
     public void addOrUpdate(BluetoothDevice device, int rssi) {
@@ -54,9 +62,7 @@ public class MyBluetoothDeviceManager {
             totalDataPoints++;
         }
         main.updateTable(); //Refresh the main table
-        if (!writingFile && table.size()>=100) {
-            //TODO something is up with this. Data not getting added. Need to queue up data to be added to table
-            //TODO what if i use a queue instead of an arraylist to begin with? then i dont need to worry about accidentally deleting data
+        if (!writingFile && bluetoothData.getSize()>=100) {
             Log.d(debugTag,"Exceeded data limit, transferring data to file.");
             updateFile();
         }
@@ -79,13 +85,9 @@ public class MyBluetoothDeviceManager {
         return null;
     }
 
-    public void forgetAll() {
-        Log.w(debugTag,"Forget all data called");
-        table.clear();
-    }
-
     public void updateData(MyBluetoothDevice device) {
-        table.add(new DataRowBluetooth(device.getLastUpdateTime(),device.getName(),device.getRSSI()));
+        //table.add(new DataPointBluetooth(device.getLastUpdateTime(),device.getName(),device.getRSSI()));
+        bluetoothData.enqueue(new DataPointBluetooth(device.getLastUpdateTime(),device.getName(),device.getRSSI()));
         //Log.d(debugTag,"added new data. size: " + table.size());
     }
 
@@ -97,10 +99,10 @@ public class MyBluetoothDeviceManager {
      * Saved on mac in documents/androidStudio/deviceExplorer/<device>/data/data/<app>/files
      */
     public void updateFile() {
-        if (writingFile || table.isEmpty()){
+        if (writingFile || bluetoothData.isEmpty()){
             Log.i(debugTag, "updateFile -- cannot write file for the following reasons: " +
                     (writingFile ? "\nalready writing to a file" : "") +
-                    (table.isEmpty() ? "\nthere is no data available to write to the file." : ""));
+                    (bluetoothData.isEmpty() ? "\nthere is no data available to write to the file." : ""));
             return;
         }
 
@@ -108,21 +110,12 @@ public class MyBluetoothDeviceManager {
         writingFile=true;
         //TODO things that get added to the table while the file is being written are lost
         try {
-            int dataCount = table.size();
-
-            /*
-            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(context.openFileOutput(filename, context.MODE_PRIVATE));
-            for (DataRow data:table) outputStreamWriter.append(data.getRow()+'\n');
-            outputStreamWriter.close();
-            */
-
+            int dataCount = bluetoothData.getSize();
             FileWriter writer = new FileWriter(file,true);
-            for (DataRowBluetooth data:table) writer.append(data.getRow() + '\n');
+            while(!bluetoothData.isEmpty()) {
+                writer.append(bluetoothData.dequeue().getRow()+'\n');
+            }
             writer.close();
-
-
-            table.clear();
-
             Log.d(debugTag,"updateFile -- file updated with " + dataCount + " data point(s).");
         } catch (IOException e) {
             Log.e(debugTag,"updateFile -- An IO exception occurred:\n"+e);
