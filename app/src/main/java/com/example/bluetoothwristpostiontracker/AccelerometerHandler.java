@@ -31,13 +31,13 @@ public class AccelerometerHandler extends Activity implements SensorEventListene
         this.context = context;
         this.main = main;
         sensorManager = (SensorManager) main.getSystemService(context.SENSOR_SERVICE);
-        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);//TODO make sure this is actually accelerometer data
+        //accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);//TODO this is retuning gyroscope data
+        gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE); //TODO this is returning accelerometer data
         filename = main.getDateForFilename() + "_accelerometer.csv";
         Log.d(debugTag,"AccelerometerHandler -- new file will be named \"" + filename+"\"");
         File path = context.getFilesDir();
         file = new File(path,filename); //context.getDir(filename,main.MODE_APPEND);
         writingFile = false;
-        //gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         int samplingPeriod = 5000000; //In microseconds, 1,000,000us = 1 second
         accelerometerData = new MyQueue<DataPointAccelerometer>();
         accelerometerData.enqueue(new DataPointAccelerometer("time(ms)","x","y","z"));
@@ -45,7 +45,8 @@ public class AccelerometerHandler extends Activity implements SensorEventListene
 
     //Begin Collecting Accelerometer Data
     public void userStartedSearch(){
-        sensorManager.registerListener(AccelerometerHandler.this,accelerometer,samplingPeriod);
+        //sensorManager.registerListener(AccelerometerHandler.this,accelerometer,samplingPeriod);
+        sensorManager.registerListener(AccelerometerHandler.this,gyroscope,samplingPeriod);
     }
 
     //Pause collecting Accelerometer data
@@ -86,7 +87,7 @@ public class AccelerometerHandler extends Activity implements SensorEventListene
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+        if (event.sensor.getType() == Sensor.TYPE_GYROSCOPE) { //TODO modify for use on other devices
             accelerometerData.enqueue(new DataPointAccelerometer(""+main.millisecondsSinceStart(),event.values[0],event.values[1],event.values[2]));
             if (accelerometerData.getSize()>5000) {
                 Log.d(debugTag,"onSensorChanged -- Exceeded max accelerometer queue size. Updating file...");
